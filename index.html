@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Kalkulator ROI (zwrotu z inwestycji)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Ogólne style strony */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    section {
+      padding: 40px 0;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    .t68 {
+      background-color: #fff;
+      padding: 40px 0;
+    }
+    .t279 {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .t69 {
+      flex: 1;
+      max-width: 1280px;
+    }
+    .t73 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #333;
+      text-align: center;
+    }
+    .dh-btn-primary {
+      background-color: #8e42ff;
+      color: #fff;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+      display: inline-block;
+      margin-top: 15px;
+      border: none;
+      cursor: pointer;
+    }
+    .dh-btn-primary:hover {
+      background-color: #363636;
+    }
+    .calculator-form {
+      background-color: #f0f0f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .calculator-form .form-group {
+      margin-bottom: 20px;
+    }
+    .calculator-form label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .calculator-form input, 
+    .calculator-form select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    /* Układ dla sekcji składników i wykresu – ustawienie w kolumnie */
+    #componentsChartSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+      width: 100%;
+    }
+    #componentsList {
+      width: 100%;
+    }
+    #componentsList p {
+      margin: 5px 0;
+    }
+    #componentsList span.color-box {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+    }
+    #chartWrapper {
+      width: 130px;
+      height: 130px;
+      margin-top: 20px;
+      flex-shrink: 0;
+    }
+    /* Upewniamy się, że canvas wypełnia cały kontener */
+    #chartWrapper canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+  <section class="t68">
+    <div class="container t279">
+      <div class="t69">
+        <h2 class="t73">Kalkulator ROI (zwrotu z inwestycji)</h2>
+        <div class="calculator-form">
+          <form id="calculatorForm">
+            <div class="form-group">
+              <label for="investmentName">Nazwa inwestycji (opcjonalnie):</label>
+              <input type="text" id="investmentName" name="investmentName">
+            </div>
+            <div class="form-group">
+              <label for="investmentCost">Koszt inwestycji [zł]:</label>
+              <input type="number" id="investmentCost" name="investmentCost" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="investmentProfit">Zysk z inwestycji [zł]:</label>
+              <input type="number" id="investmentProfit" name="investmentProfit" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="investmentPeriod">Okres inwestycji (miesiące):</label>
+              <input type="number" id="investmentPeriod" name="investmentPeriod" step="1" value="12">
+            </div>
+            <button type="button" class="dh-btn-primary" onclick="calculate()">Oblicz</button>
+          </form>
+        </div>
+        <!-- Kontener na wyniki obliczeń -->
+        <div id="results"></div>
+        <!-- Scalone sekcje: składniki inwestycji + wykres -->
+        <div id="mergedSection"></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    var pieChart; // globalna zmienna dla wykresu
+
+    function calculate() {
+      var investmentCost = parseFloat(document.getElementById('investmentCost').value) || 0;
+      var investmentProfit = parseFloat(document.getElementById('investmentProfit').value) || 0;
+      var investmentName = document.getElementById('investmentName').value || "Inwestycja";
+      var investmentPeriod = parseFloat(document.getElementById('investmentPeriod').value) || 0;
+
+      if (investmentCost <= 0) {
+        alert("Proszę podać wartość kosztu inwestycji większą niż 0.");
+        return;
+      }
+      if (investmentPeriod <= 0) {
+        alert("Proszę podać okres inwestycji w miesiącach (większy niż 0).");
+        return;
+      }
+
+      // Podstawowe obliczenia
+      var netProfit = investmentProfit - investmentCost;
+      var roi = (netProfit / investmentCost) * 100; // ROI całkowity [%]
+      
+      // Obliczenia z uwzględnieniem czasu
+      // Annualized ROI – roczna stopa zwrotu (przyjmujemy, że wynik roi dotyczy całego okresu)
+      var totalROIDecimal = netProfit / investmentCost; // ROI w postaci ułamka
+      var annualizedROI = ( Math.pow(1 + totalROIDecimal, 12 / investmentPeriod) - 1 ) * 100;
+      
+      // Payback period (okres zwrotu) - przy założeniu równomiernego rozłożenia zysków w okresie
+      var monthlyProfit = investmentPeriod > 0 ? (investmentProfit / investmentPeriod) : 0;
+      var paybackPeriod = (monthlyProfit > 0) ? (investmentCost / monthlyProfit) : "N/A";
+
+      // Ocena efektywności inwestycji wg ROI (graficzne wskaźniki)
+      var efficiencyMessage = "";
+      var efficiencyColor = "";
+      if (roi > 100) {
+        efficiencyMessage = "Bardzo wysoki ROI: Inwestycja przynosi ogromne zwroty!";
+        efficiencyColor = "green";
+      } else if (roi >= 20 && roi <= 100) {
+        efficiencyMessage = "Dobry ROI: Inwestycja jest opłacalna.";
+        efficiencyColor = "orange";
+      } else if (roi >= 0 && roi < 20) {
+        efficiencyMessage = "Niski ROI: Zwrót jest minimalny. Warto przeanalizować koszty.";
+        efficiencyColor = "goldenrod";
+      } else if (roi < 0) {
+        efficiencyMessage = "Negatywny ROI: Inwestycja generuje stratę!";
+        efficiencyColor = "red";
+      }
+      
+      // Przygotowanie sekcji z wynikami
+      var wynikHTML = `
+        <h2>Wynik:</h2>
+        <p>Dla inwestycji "<strong>${investmentName}</strong>" obliczono:</p>
+        <p><strong>ROI (całkowity):</strong> ${roi.toFixed(2)}%</p>
+        <p><strong>ROI (roczny, annualized):</strong> ${annualizedROI.toFixed(2)}%</p>
+        <p><strong>Zysk netto:</strong> ${netProfit.toFixed(2)} zł</p>
+        <p><strong>Okres zwrotu inwestycji:</strong> ${ 
+          (monthlyProfit > 0) ? paybackPeriod.toFixed(2) + " miesięcy" : "Brak zwrotu" 
+        }</p>
+      `;
+
+      // Sekcja składników wykresu
+      // Dla wykresu używamy: koszt inwestycji vs. wartość zysku (absolutna wartość)
+      var profitDisplay = netProfit;
+      var profitLabel = "Zysk netto";
+      if (netProfit < 0) {
+        profitDisplay = Math.abs(netProfit);
+        profitLabel = "Strata";
+      }
+      var skladnikiHTML = `
+        <h3>📊 Składniki inwestycji</h3>
+        <div id="componentsChartSection">
+          <div id="componentsList">
+            <p><span class="color-box" style="background-color:#FF6384;"></span><strong>Koszt inwestycji:</strong> ${investmentCost.toFixed(2)} zł</p>
+            <p><span class="color-box" style="background-color:#4BC0C0;"></span><strong>${profitLabel}:</strong> ${Math.abs(netProfit).toFixed(2)} zł</p>
+          </div>
+          <div id="chartWrapper">
+            <canvas id="pieChart" width="130" height="130"></canvas>
+          </div>
+        </div>
+      `;
+
+      // Podsumowanie z graficznym wskaźnikiem efektywności
+      var podsumowanieHTML = `
+        <h3>💰 Podsumowanie</h3>
+        <p style="color:${efficiencyColor}; font-weight:bold;">Wskaźnik efektywności: ${efficiencyMessage}</p>
+      `;
+
+      document.getElementById("results").innerHTML = wynikHTML;
+      document.getElementById("mergedSection").innerHTML = skladnikiHTML + podsumowanieHTML;
+
+      // Rysowanie wykresu kołowego
+      if (pieChart) {
+        pieChart.destroy();
+        pieChart = null;
+      }
+      var pieData = [
+        investmentCost,
+        Math.abs(netProfit)
+      ];
+      var pieLabels = ["Koszt inwestycji", profitLabel];
+      var pieColors = ["#FF6384", (netProfit < 0 ? "red" : "#4BC0C0")];
+
+      var ctx = document.getElementById('pieChart').getContext('2d');
+      pieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: pieLabels,
+          datasets: [{
+            data: pieData,
+            backgroundColor: pieColors
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+  </script>
+
+  <script>
+    // Funkcja wysyłająca wysokość iframe do rodzica (jeśli osadzasz kalkulator w iframe)
+    function sendHeightToParent() {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage({ iframeHeight: height }, '*');
+    }
+    window.addEventListener('load', sendHeightToParent);
+    window.addEventListener('resize', sendHeightToParent);
+    document.addEventListener('click', function() {
+      setTimeout(sendHeightToParent, 300);
+    });
+  </script>
+
+</body>
+</html>
