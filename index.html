@@ -3,281 +3,422 @@
 <head>
   <meta charset="UTF-8">
   <title>Kalkulator ROI (zwrotu z inwestycji)</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Ogólne style strony */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #ffffff;
-    }
-    section {
-      padding: 40px 0;
+      background: #fff;
+      color: #333;
     }
     .container {
-      max-width: 1280px;
+      max-width: 560px;
       margin: 0 auto;
-      padding: 0 15px;
+      padding: 32px 15px;
     }
-    .t68 {
-      background-color: #fff;
-      padding: 40px 0;
+    h2 {
+      font-size: 1.6rem;
+      color: #1a1a2e;
+      text-align: center;
+      margin: 0 0 4px;
     }
-    .t279 {
+    .subtitle {
+      text-align: center;
+      color: #888;
+      font-size: 0.88rem;
+      margin-bottom: 22px;
+    }
+
+    /* ── Form ── */
+    .calc-form {
+      background: #f7f7f9;
+      border: 1px solid #e8e8ec;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .fields-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .field input {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #d0d0d8;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: #8e42ff;
+      box-shadow: 0 0 0 3px rgba(142,66,255,0.08);
+    }
+    .reset-link {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #bbb;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .reset-link:hover { color: #8e42ff; }
+
+    /* ── Results ── */
+    .results {
+      margin-top: 18px;
+    }
+
+    .res-list {
+      border: 1px solid #e8e8ec;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .res-row {
       display: flex;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      justify-content: center;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid #f0f0f2;
     }
-    .t69 {
-      flex: 1;
-      max-width: 1280px;
+    .res-row:last-child { border-bottom: none; }
+    .res-row-label {
+      font-size: 0.88rem;
+      color: #777;
     }
-    .t73 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-      color: #333;
+    .res-row-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+    .res-row.main {
+      background: #faf8ff;
+    }
+    .res-row.main .res-row-value {
+      font-size: 1.1rem;
+      color: #5a3d8a;
+    }
+    .res-row.loss .res-row-value {
+      color: #c03030;
+    }
+
+    /* ── Gauge ── */
+    .gauge-section {
+      margin-bottom: 6px;
+    }
+    .gauge-label {
+      font-size: 0.78rem;
+      color: #999;
+      margin-bottom: 6px;
       text-align: center;
     }
-    .dh-btn-primary {
-      background-color: #8e42ff;
+    .gauge-track {
+      position: relative;
+      width: 100%;
+      height: 14px;
+      border-radius: 7px;
+      background: linear-gradient(to right, #d4a0a0 0%, #e0c888 30%, #d5d88a 45%, #a0c89a 65%, #6aad6a 100%);
+    }
+    .gauge-marker {
+      position: absolute;
+      top: -5px;
+      width: 4px;
+      height: 24px;
+      background: #1a1a2e;
+      border-radius: 2px;
+      transition: left 0.4s ease;
+    }
+    .gauge-marker::after {
+      content: attr(data-label);
+      position: absolute;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      white-space: nowrap;
+    }
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: #bbb;
+      margin-top: 20px;
+    }
+
+    /* ── Comment ── */
+    .comment {
+      text-align: center;
+      font-size: 0.84rem;
+      color: #999;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+    /* ── CTA ── */
+    .cta-box {
+      margin-top: 28px;
+      background: #1a1a2e;
+      border-radius: 10px;
+      padding: 22px;
+      color: #fff;
+    }
+    .cta-box h3 {
+      font-size: 1rem;
+      margin: 0 0 6px;
+      color: #fff;
+      line-height: 1.4;
+    }
+    .cta-box p {
+      font-size: 0.85rem;
+      color: #b8b8c8;
+      line-height: 1.5;
+      margin: 0 0 14px;
+    }
+    .cta-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+    .cta-primary {
+      background: #8e42ff;
       color: #fff;
       padding: 10px 20px;
       text-decoration: none;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-      display: inline-block;
-      margin-top: 15px;
-      border: none;
-      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.2s;
     }
-    .dh-btn-primary:hover {
-      background-color: #363636;
+    .cta-primary:hover { background: #7a35e6; }
+    .cta-secondary {
+      background: transparent;
+      color: #b8b8c8;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      border: 1px solid #444;
+      transition: all 0.2s;
     }
-    .calculator-form {
-      background-color: #f0f0f0;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .calculator-form .form-group {
-      margin-bottom: 20px;
-    }
-    .calculator-form label {
-      display: block;
-      margin-bottom: 10px;
-      font-size: 1.1rem;
-      color: #333;
-    }
-    .calculator-form input, 
-    .calculator-form select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-    /* Układ dla sekcji składników i wykresu – ustawienie w kolumnie */
-    #componentsChartSection {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 20px;
-      width: 100%;
-    }
-    #componentsList {
-      width: 100%;
-    }
-    #componentsList p {
-      margin: 5px 0;
-    }
-    #componentsList span.color-box {
-      display: inline-block;
-      width: 15px;
-      height: 15px;
-      margin-right: 5px;
-    }
-    #chartWrapper {
-      width: 130px;
-      height: 130px;
-      margin-top: 20px;
-      flex-shrink: 0;
-    }
-    /* Upewniamy się, że canvas wypełnia cały kontener */
-    #chartWrapper canvas {
-      width: 100% !important;
-      height: 100% !important;
+    .cta-secondary:hover { border-color: #8e42ff; color: #fff; }
+
+    @media (max-width: 480px) {
+      .fields-row { grid-template-columns: 1fr; }
+      .cta-btns { flex-direction: column; }
+      .cta-primary, .cta-secondary { text-align: center; }
     }
   </style>
 </head>
 <body>
-  <section class="t68">
-    <div class="container t279">
-      <div class="t69">
-        <h2 class="t73">Kalkulator ROI (zwrotu z inwestycji)</h2>
-        <div class="calculator-form">
-          <form id="calculatorForm">
-            <div class="form-group">
-              <label for="investmentName">Nazwa inwestycji (opcjonalnie):</label>
-              <input type="text" id="investmentName" name="investmentName">
-            </div>
-            <div class="form-group">
-              <label for="investmentCost">Koszt inwestycji [zł]:</label>
-              <input type="number" id="investmentCost" name="investmentCost" step="0.01">
-            </div>
-            <div class="form-group">
-              <label for="investmentProfit">Przychód inwestycji [zł]:</label>
-              <input type="number" id="investmentProfit" name="investmentProfit" step="0.01">
-            </div>
-            <div class="form-group">
-              <label for="investmentPeriod">Okres inwestycji (miesiące):</label>
-              <input type="number" id="investmentPeriod" name="investmentPeriod" step="1" value="12">
-            </div>
-            <button type="button" class="dh-btn-primary" onclick="calculate()">Oblicz</button>
-          </form>
-        </div>
-        <!-- Kontener na wyniki obliczeń -->
-        <div id="results"></div>
-        <!-- Scalone sekcje: składniki inwestycji + wykres -->
-        <div id="mergedSection"></div>
+
+<div class="container">
+  <h2>Kalkulator ROI — zwrot z inwestycji</h2>
+  <p class="subtitle">Wpisz koszt i przychód — kalkulator wyliczy ROI automatycznie.</p>
+
+  <div class="calc-form">
+    <div class="fields-row">
+      <div class="field">
+        <label>Koszt inwestycji [zł]</label>
+        <input type="number" id="inCost" step="0.01" placeholder="np. 10 000">
+      </div>
+      <div class="field">
+        <label>Przychód [zł]</label>
+        <input type="number" id="inRevenue" step="0.01" placeholder="np. 18 000">
+      </div>
+      <div class="field">
+        <label>Okres [miesiące]</label>
+        <input type="number" id="inMonths" step="1" value="12" placeholder="12">
       </div>
     </div>
-  </section>
+    <span class="reset-link" onclick="resetAll()">Wyczyść</span>
+  </div>
 
-  <script>
-    var pieChart; // globalna zmienna dla wykresu
+  <div class="results" id="results">
+    <div class="res-list" id="resList">
+      <div class="res-row main">
+        <span class="res-row-label">ROI</span>
+        <span class="res-row-value">—</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Zysk netto</span>
+        <span class="res-row-value">—</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Okres zwrotu</span>
+        <span class="res-row-value">—</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Za każdą zł inwestycji</span>
+        <span class="res-row-value">—</span>
+      </div>
+    </div>
 
-    function calculate() {
-      var investmentCost = parseFloat(document.getElementById('investmentCost').value) || 0;
-      var investmentProfit = parseFloat(document.getElementById('investmentProfit').value) || 0;
-      var investmentName = document.getElementById('investmentName').value || "Inwestycja";
-      var investmentPeriod = parseFloat(document.getElementById('investmentPeriod').value) || 0;
+    <div class="gauge-section" id="gaugeSection">
+      <div class="gauge-label">Skala ROI</div>
+      <div class="gauge-track">
+        <div class="gauge-marker" id="gaugeMarker" style="left:calc(20% - 2px)" data-label=""></div>
+      </div>
+      <div class="gauge-labels">
+        <span>-50%</span>
+        <span>0%</span>
+        <span>50%</span>
+        <span>100%</span>
+        <span>200%+</span>
+      </div>
+    </div>
 
-      if (investmentCost <= 0) {
-        alert("Proszę podać wartość kosztu inwestycji większą niż 0.");
-        return;
-      }
-      if (investmentPeriod <= 0) {
-        alert("Proszę podać okres inwestycji w miesiącach (większy niż 0).");
-        return;
-      }
+    <p class="comment" id="comment"></p>
+  </div>
 
-      // Podstawowe obliczenia
-      var netProfit = investmentProfit - investmentCost;
-      var roi = (netProfit / investmentCost) * 100; // ROI całkowity [%]
-      
-      // Obliczenia z uwzględnieniem czasu
-      // Annualized ROI – roczna stopa zwrotu (przyjmujemy, że wynik roi dotyczy całego okresu)
-      var totalROIDecimal = netProfit / investmentCost; // ROI w postaci ułamka
-      var annualizedROI = ( Math.pow(1 + totalROIDecimal, 12 / investmentPeriod) - 1 ) * 100;
-      
-      // Payback period (okres zwrotu) - przy założeniu równomiernego rozłożenia zysków w okresie
-      var monthlyProfit = investmentPeriod > 0 ? (investmentProfit / investmentPeriod) : 0;
-      var paybackPeriod = (monthlyProfit > 0) ? (investmentCost / monthlyProfit) : "N/A";
+  <div class="cta-box">
+    <h3>Czy wiesz, które inwestycje w Twojej firmie naprawdę się zwracają?</h3>
+    <p>Audyt procesów biznesowych pokaże, gdzie Twoje pieniądze pracują, a gdzie znikają — i co z tym zrobić.</p>
+    <div class="cta-btns">
+      <a href="https://naprawimyfirme.pl/audyt-procesow-biznesowych" class="cta-primary">Sprawdź audyt firmy</a>
+      <a href="https://naprawimyfirme.pl/doradztwo-biznesowe" class="cta-secondary">Doradztwo biznesowe</a>
+    </div>
+  </div>
+</div>
 
-      // Ocena efektywności inwestycji wg ROI (graficzne wskaźniki)
-      var efficiencyMessage = "";
-      var efficiencyColor = "";
-      if (roi > 100) {
-        efficiencyMessage = "Bardzo wysoki ROI: Inwestycja przynosi ogromne zwroty!";
-        efficiencyColor = "green";
-      } else if (roi >= 20 && roi <= 100) {
-        efficiencyMessage = "Dobry ROI: Inwestycja jest opłacalna.";
-        efficiencyColor = "orange";
-      } else if (roi >= 0 && roi < 20) {
-        efficiencyMessage = "Niski ROI: Zwrót jest minimalny. Warto przeanalizować koszty.";
-        efficiencyColor = "goldenrod";
-      } else if (roi < 0) {
-        efficiencyMessage = "Negatywny ROI: Inwestycja generuje stratę!";
-        efficiencyColor = "red";
-      }
-      
-      // Przygotowanie sekcji z wynikami
-      var wynikHTML = `
-        <h2>Wynik:</h2>
-        <p>Dla inwestycji "<strong>${investmentName}</strong>" obliczono:</p>
-        <p><strong>ROI (całkowity):</strong> ${roi.toFixed(2)}%</p>
-        <p><strong>ROI (roczny, annualized):</strong> ${annualizedROI.toFixed(2)}%</p>
-        <p><strong>Zysk netto:</strong> ${netProfit.toFixed(2)} zł</p>
-        <p><strong>Okres zwrotu inwestycji:</strong> ${ 
-          (monthlyProfit > 0) ? paybackPeriod.toFixed(2) + " miesięcy" : "Brak zwrotu" 
-        }</p>
-      `;
+<script>
+  const elCost = document.getElementById('inCost');
+  const elRevenue = document.getElementById('inRevenue');
+  const elMonths = document.getElementById('inMonths');
 
-      // Sekcja składników wykresu
-      // Dla wykresu używamy: koszt inwestycji vs. wartość zysku (absolutna wartość)
-      var profitDisplay = netProfit;
-      var profitLabel = "Zysk netto";
-      if (netProfit < 0) {
-        profitDisplay = Math.abs(netProfit);
-        profitLabel = "Strata";
-      }
-      var skladnikiHTML = `
-        <h3>📊 Składniki inwestycji</h3>
-        <div id="componentsChartSection">
-          <div id="componentsList">
-            <p><span class="color-box" style="background-color:#FF6384;"></span><strong>Koszt inwestycji:</strong> ${investmentCost.toFixed(2)} zł</p>
-            <p><span class="color-box" style="background-color:#4BC0C0;"></span><strong>${profitLabel}:</strong> ${Math.abs(netProfit).toFixed(2)} zł</p>
-          </div>
-          <div id="chartWrapper">
-            <canvas id="pieChart" width="130" height="130"></canvas>
-          </div>
-        </div>
-      `;
+  function sendHeight() {
+    window.parent.postMessage({ iframeHeight: document.body.scrollHeight }, '*');
+  }
 
-      // Podsumowanie z graficznym wskaźnikiem efektywności
-      var podsumowanieHTML = `
-        <h3>💰 Podsumowanie</h3>
-        <p style="color:${efficiencyColor}; font-weight:bold;">Wskaźnik efektywności: ${efficiencyMessage}</p>
-      `;
+  [elCost, elRevenue, elMonths].forEach(el => {
+    el.addEventListener('input', autoCalc);
+  });
 
-      document.getElementById("results").innerHTML = wynikHTML;
-      document.getElementById("mergedSection").innerHTML = skladnikiHTML + podsumowanieHTML;
+  function autoCalc() {
+    const cost = parseFloat(elCost.value) || 0;
+    const revenue = parseFloat(elRevenue.value) || 0;
+    const months = parseFloat(elMonths.value) || 0;
 
-      // Rysowanie wykresu kołowego
-      if (pieChart) {
-        pieChart.destroy();
-        pieChart = null;
-      }
-      var pieData = [
-        investmentCost,
-        Math.abs(netProfit)
-      ];
-      var pieLabels = ["Koszt inwestycji", profitLabel];
-      var pieColors = ["#FF6384", (netProfit < 0 ? "red" : "#4BC0C0")];
-
-      var ctx = document.getElementById('pieChart').getContext('2d');
-      pieChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: pieLabels,
-          datasets: [{
-            data: pieData,
-            backgroundColor: pieColors
-          }]
-        },
-        options: {
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      });
+    if (cost <= 0 || revenue <= 0 || months <= 0) {
+      showPlaceholder();
+      sendHeight();
+      return;
     }
-  </script>
 
-  <script>
-    // Funkcja wysyłająca wysokość iframe do rodzica (jeśli osadzasz kalkulator w iframe)
-    function sendHeightToParent() {
-      const height = document.body.scrollHeight;
-      window.parent.postMessage({ iframeHeight: height }, '*');
+    const profit = revenue - cost;
+    const roi = (profit / cost) * 100;
+    const monthlyRevenue = revenue / months;
+    const paybackMonths = monthlyRevenue > 0 ? cost / monthlyRevenue : null;
+    const perZloty = revenue / cost;
+    const isLoss = profit < 0;
+
+    // ── Payback text ──
+    let paybackText;
+    if (isLoss) {
+      paybackText = 'Brak zwrotu';
+    } else if (paybackMonths < 1) {
+      paybackText = '< 1 miesiąca';
+    } else {
+      paybackText = paybackMonths.toFixed(1) + ' mies.';
     }
-    window.addEventListener('load', sendHeightToParent);
-    window.addEventListener('resize', sendHeightToParent);
-    document.addEventListener('click', function() {
-      setTimeout(sendHeightToParent, 300);
-    });
-  </script>
+
+    // ── "Za każdą złotówkę" ──
+    const zlotowkaText = isLoss
+      ? 'Tracisz ' + (1 - perZloty).toFixed(2) + ' zł'
+      : '+' + (perZloty - 1).toFixed(2) + ' zł (zwrot: ' + perZloty.toFixed(2) + ' zł)';
+
+    const mainClass = isLoss ? 'res-row main loss' : 'res-row main';
+    const lossClass = isLoss ? 'res-row loss' : 'res-row';
+
+    document.getElementById('resList').innerHTML = `
+      <div class="${mainClass}">
+        <span class="res-row-label">ROI</span>
+        <span class="res-row-value">${roi.toFixed(1)}%</span>
+      </div>
+      <div class="${lossClass}">
+        <span class="res-row-label">${isLoss ? 'Strata' : 'Zysk netto'}</span>
+        <span class="res-row-value">${isLoss ? '' : '+'}${profit.toFixed(0)} zł</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Okres zwrotu</span>
+        <span class="res-row-value">${paybackText}</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Za każdą zł inwestycji</span>
+        <span class="res-row-value">${zlotowkaText}</span>
+      </div>
+    `;
+
+    // ── Gauge ──
+    let gaugePos;
+    if (roi <= -50) gaugePos = 0;
+    else if (roi >= 200) gaugePos = 100;
+    else gaugePos = ((roi + 50) / 250) * 100;
+
+    const marker = document.getElementById('gaugeMarker');
+    marker.style.left = `calc(${gaugePos}% - 2px)`;
+    marker.setAttribute('data-label', roi.toFixed(0) + '%');
+
+    // ── Comment ──
+    let comment = '';
+    if (roi < 0) {
+      comment = 'Inwestycja generuje stratę — sprawdź, czy da się obniżyć koszty lub zwiększyć przychód.';
+    } else if (roi < 20) {
+      comment = 'Zwrot minimalny — czy te pieniądze nie pracowałyby lepiej gdzie indziej?';
+    } else if (roi < 50) {
+      comment = 'Przyzwoity zwrot. Kluczowe: czy jest powtarzalny i skalowalny?';
+    } else if (roi < 100) {
+      comment = 'Bardzo dobry zwrot — warto rozważyć zwiększenie skali tej inwestycji.';
+    } else {
+      comment = 'Wyjątkowy ROI — upewnij się, że liczysz wszystkie koszty (czas, zespół, koszty pośrednie).';
+    }
+    document.getElementById('comment').textContent = comment;
+    sendHeight();
+  }
+
+  function showPlaceholder() {
+    document.getElementById('resList').innerHTML = `
+      <div class="res-row main">
+        <span class="res-row-label">ROI</span>
+        <span class="res-row-value">—</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Zysk netto</span>
+        <span class="res-row-value">—</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Okres zwrotu</span>
+        <span class="res-row-value">—</span>
+      </div>
+      <div class="res-row">
+        <span class="res-row-label">Za każdą zł inwestycji</span>
+        <span class="res-row-value">—</span>
+      </div>
+    `;
+    const marker = document.getElementById('gaugeMarker');
+    marker.style.left = 'calc(20% - 2px)';
+    marker.setAttribute('data-label', '');
+    document.getElementById('comment').textContent = '';
+  }
+
+  function resetAll() {
+    elCost.value = '';
+    elRevenue.value = '';
+    elMonths.value = '12';
+    showPlaceholder();
+    sendHeight();
+  }
+
+  window.addEventListener('load', sendHeight);
+  window.addEventListener('resize', sendHeight);
+</script>
 
 </body>
 </html>
